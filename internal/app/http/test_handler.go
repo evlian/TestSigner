@@ -94,6 +94,11 @@ func (s *ApiServer) handleVerifySignature(
 		return utils.WriteJson(writer, http.StatusNotFound, "Invalid signature")
 	}
 
+	if signature == nil {
+		fmt.Println(err)
+		return utils.WriteJson(writer, http.StatusNotFound, "Invalid signature")
+	}
+
 	answers := make([]models.AnswersDto, len(signature.Questions))
 	for i := 0; i < len(signature.Questions); i++ {
 		answers[i].Question = signature.Questions[i]

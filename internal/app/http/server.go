@@ -5,12 +5,13 @@ import (
 	"net/http"
 
 	"github.com/evlian/TestSigner/internal/app/database"
+	"github.com/evlian/TestSigner/internal/app/middleware"
 	"github.com/evlian/TestSigner/internal/app/utils"
 	"github.com/gorilla/mux"
 )
 
 type ApiError struct {
-	Error string
+	Error string ``
 }
 
 type apiFunc func(http.ResponseWriter, *http.Request) error
@@ -38,6 +39,7 @@ func NewApiServer(listenAddress string, store database.Storage) *ApiServer {
 func (s *ApiServer) Run() {
 	router := mux.NewRouter()
 
+	router.Use(middleware.CommonMiddleware())
 	router.HandleFunc("/sign-answers", makeHttpHandleFunc(s.handleSignAnswers))
 	router.HandleFunc("/verify-signature", makeHttpHandleFunc(s.handleVerifySignature))
 

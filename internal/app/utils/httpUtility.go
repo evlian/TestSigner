@@ -10,5 +10,3 @@ func WriteJson(writer http.ResponseWriter, status int, value any) error {
 	writer.Header().Set("Content-Type", "application/json")
 	return json.NewEncoder(writer).Encode(value)
 }
-
-type apiFunc func(http.ResponseWriter, *http.Request) error

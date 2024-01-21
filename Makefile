@@ -2,7 +2,7 @@ build:
 	@cd ./cmd/app && go build -o bin/testsigner
 
 run: build
-	@./bin/testsigner
+	@cd ./cmd/app && ./bin/testsigner
 
 testsigner:
 	@go test -v ./...

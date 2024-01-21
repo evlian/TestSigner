@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 
 	"github.com/evlian/TestSigner/internal/app/database"
@@ -18,7 +17,6 @@ func main() {
 		log.Fatal(err)
 	}
 
-	fmt.Printf("%+v\n", store)
 	server := http.NewApiServer(":3000", store)
 	server.Run()
 }

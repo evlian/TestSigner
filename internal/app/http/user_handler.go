@@ -22,7 +22,7 @@ func (s *ApiServer) handleLogin(
 
 	user, err := s.store.GetUser(loginRequest.Email)
 	if err != nil {
-		return utils.WriteJson(writer, http.StatusNotModified, "user with email already exists")
+		return utils.WriteJson(writer, http.StatusNotFound, "not found")
 	}
 
 	passwordErr := utils.VerifyPassword(user.Password, loginRequest.Password, user.Salt)
@@ -55,6 +55,15 @@ func (s *ApiServer) handleRegister(
 
 	var user models.User
 	json.NewDecoder(request.Body).Decode(&user)
+
+	existingUser, err := s.store.GetUser(user.Email)
+	if err != nil {
+		return utils.WriteJson(writer, http.StatusInternalServerError, "internal server error")
+	}
+
+	if existingUser != nil {
+		return utils.WriteJson(writer, http.StatusNotModified, "user already exists")
+	}
 
 	salt, err := utils.GenerateSalt()
 	if err != nil {

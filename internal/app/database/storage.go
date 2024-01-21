@@ -100,12 +100,9 @@ func (store *PostgresStore) CreateUser(user *models.User) error {
 	)
 
 	if err != nil {
-		fmt.Println("Data inserted not." + err.Error())
-
 		return err
 	}
 
-	fmt.Println("Data inserted successfully.")
 	return nil
 }
 
@@ -194,13 +191,11 @@ func (store *PostgresStore) GetUser(email string) (*models.User, error) {
         WHERE email = $1
     `
 
-	// Execute the SQL statement and scan the result into the User struct
 	var user models.User
 	err := store.database.QueryRow(query, email).Scan(&user.Id, &user.Email, &user.Password, &user.Salt)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			// Return nil and an error indicating that the user was not found
-			return nil, fmt.Errorf("User not found")
+			return nil, nil
 		}
 		return nil, err
 	}
