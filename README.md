@@ -20,21 +20,20 @@ Make sure you have the following installed:
 2. Install dependencies:
 
    ```bash
-   go get
+   go get tidy
    ```
 
 3. Set up the PostgreSQL database:
 
-   - Create a PostgreSQL database and update the database connection details in the `config.json` file.
+   - Create a PostgreSQL database (hardcoded in internal/app/database/storage.go)
 
 4. Build and run the application:
 
    ```bash
-   go build
-   ./test-signer-service
+   make run
    ```
 
-   The service should now be running on `http://localhost:8080`.
+   The service should now be running on `http://localhost:3000`.
 
 ## Usage
 
