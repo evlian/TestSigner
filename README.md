@@ -77,5 +77,3 @@ Replace `<token>`, `<userId>`, and `<signature>` with the actual values obtained
 
 - This project uses PostgreSQL as the database.
 ```
-README.txt
-3 KB
