@@ -79,7 +79,7 @@ func VerifyToken(tokenString string) error {
 	return nil
 }
 
-func hashPassword(password, salt string) (string, error) {
+func HashPassword(password, salt string) (string, error) {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password+salt), bcrypt.DefaultCost)
 	if err != nil {
 		return "", err
@@ -87,7 +87,7 @@ func hashPassword(password, salt string) (string, error) {
 	return string(hashedPassword), nil
 }
 
-func verifyPassword(hashedPassword, inputPassword, salt string) error {
+func VerifyPassword(hashedPassword, inputPassword, salt string) error {
 	// Combine input password and salt, then compare with the hashed password
 	err := bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(inputPassword+salt))
 	if err != nil {
@@ -96,7 +96,7 @@ func verifyPassword(hashedPassword, inputPassword, salt string) error {
 	return nil
 }
 
-func generateSalt() (string, error) {
+func GenerateSalt() (string, error) {
 	saltBytes := make([]byte, 16)
 	_, err := rand.Read(saltBytes)
 	if err != nil {

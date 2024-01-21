@@ -4,6 +4,8 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/evlian/TestSigner/internal/app/database"
+	"github.com/evlian/TestSigner/internal/app/utils"
 	"github.com/gorilla/mux"
 )
 
@@ -11,20 +13,22 @@ type ApiError struct {
 	Error string
 }
 
+type apiFunc func(http.ResponseWriter, *http.Request) error
+
 func makeHttpHandleFunc(f apiFunc) http.HandlerFunc {
 	return func(writer http.ResponseWriter, response *http.Request) {
 		if err := f(writer, response); err != nil {
-			WriteJson(writer, http.StatusBadRequest, ApiError{Error: err.Error()})
+			utils.WriteJson(writer, http.StatusBadRequest, ApiError{Error: err.Error()})
 		}
 	}
 }
 
 type ApiServer struct {
 	listenAddress string
-	store         Storage
+	store         database.Storage
 }
 
-func NewApiServer(listenAddress string, store Storage) *ApiServer {
+func NewApiServer(listenAddress string, store database.Storage) *ApiServer {
 	return &ApiServer{
 		listenAddress: listenAddress,
 		store:         store,

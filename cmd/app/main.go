@@ -3,11 +3,13 @@ package main
 import (
 	"fmt"
 	"log"
-	"main/storage"
+
+	"github.com/evlian/TestSigner/internal/app/database"
+	"github.com/evlian/TestSigner/internal/app/http"
 )
 
 func main() {
-	store, err := NewPostgresStore()
+	store, err := database.NewPostgresStore()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -17,6 +19,6 @@ func main() {
 	}
 
 	fmt.Printf("%+v\n", store)
-	server := NewApiServer(":3000", store)
+	server := http.NewApiServer(":3000", store)
 	server.Run()
 }

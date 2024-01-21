@@ -1,5 +1,5 @@
 build:
-	@go build -o bin/testsigner
+	@cd ./cmd/app && go build -o bin/testsigner
 
 run: build
 	@./bin/testsigner

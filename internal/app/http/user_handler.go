@@ -2,78 +2,85 @@ package http
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
+	"strconv"
+
+	"github.com/evlian/TestSigner/internal/app/models"
+	"github.com/evlian/TestSigner/internal/app/utils"
 )
 
 func (s *ApiServer) handleLogin(
-	w http.ResponseWriter,
-	r *http.Request) error {
-	w.Header().Set("Content-Type", "application/json")
+	writer http.ResponseWriter,
+	request *http.Request) error {
 
-	var loginRequest LoginRequest
-	json.NewDecoder(r.Body).Decode(&loginRequest)
+	if request.Method != "POST" {
+		return utils.WriteJson(writer, http.StatusMethodNotAllowed, "Method not allowed")
+	}
+
+	var loginRequest models.LoginRequest
+	json.NewDecoder(request.Body).Decode(&loginRequest)
 
 	user, err := s.store.GetUser(loginRequest.Email)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return fmt.Errorf("email not registered")
+		return utils.WriteJson(writer, http.StatusNotModified, "user with email already exists")
 	}
 
-	passwordErr := verifyPassword(user.Password, loginRequest.Password, user.Salt)
+	passwordErr := utils.VerifyPassword(user.Password, loginRequest.Password, user.Salt)
 	if passwordErr == nil {
-		tokenString, err := CreateToken(user.Id)
+		tokenString, err := utils.CreateToken(strconv.Itoa(user.Id))
 
 		if err != nil {
-			return fmt.Errorf("email not registered")
+			return utils.WriteJson(writer, http.StatusInternalServerError, "error creating token")
 		}
 
-		var loggedInUser SuccessfulAuthResponse
+		var loggedInUser models.SuccessfulAuthResponse
+		loggedInUser.Id = user.Id
 		loggedInUser.Email = user.Email
 		loggedInUser.Token = tokenString
-		return WriteJson(w, http.StatusOK, &loggedInUser)
+		return utils.WriteJson(writer, http.StatusOK, &loggedInUser)
 
 	} else {
-		return fmt.Errorf("password was incorrect")
+		return utils.WriteJson(writer, http.StatusUnauthorized, "unauthorized")
 	}
 
 }
 
 func (s *ApiServer) handleRegister(
-	w http.ResponseWriter,
-	r *http.Request) error {
-	w.Header().Set("Content-Type", "application/json")
+	writer http.ResponseWriter,
+	request *http.Request) error {
 
-	var user User
-	json.NewDecoder(r.Body).Decode(&user)
+	if request.Method != "POST" {
+		return utils.WriteJson(writer, http.StatusMethodNotAllowed, "Method not allowed")
+	}
 
-	salt, err := generateSalt()
+	var user models.User
+	json.NewDecoder(request.Body).Decode(&user)
+
+	salt, err := utils.GenerateSalt()
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return fmt.Errorf("error generating salt")
+		return utils.WriteJson(writer, http.StatusInternalServerError, "internal server error")
 	}
 
 	user.Salt = salt
 
-	hashedPassword, err := hashPassword(user.Id, user.Salt)
+	hashedPassword, err := utils.HashPassword(user.Password, user.Salt)
 
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return fmt.Errorf("error hashing password")
+		return utils.WriteJson(writer, http.StatusInternalServerError, "internal server error")
 	}
 	user.Password = hashedPassword
 
 	s.store.CreateUser(&user)
 
-	tokenString, err := CreateToken(user.Email)
+	tokenString, err := utils.CreateToken(user.Email)
 	if err != nil {
-		return fmt.Errorf("email not registered")
+		return utils.WriteJson(writer, http.StatusUnauthorized, "Unauthorized")
 	}
 
-	var loggedInUser SuccessfulAuthResponse
+	var loggedInUser models.SuccessfulAuthResponse
+	loggedInUser.Id = user.Id
 	loggedInUser.Email = user.Email
 	loggedInUser.Token = tokenString
 
-	w.WriteHeader(http.StatusCreated)
-	return WriteJson(w, http.StatusCreated, loggedInUser)
+	return utils.WriteJson(writer, http.StatusCreated, loggedInUser)
 }

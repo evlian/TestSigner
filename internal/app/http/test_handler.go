@@ -5,6 +5,10 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+
+	"github.com/evlian/TestSigner/internal/app/middleware"
+	"github.com/evlian/TestSigner/internal/app/models"
+	"github.com/evlian/TestSigner/internal/app/utils"
 )
 
 func (s *ApiServer) handleSignAnswers(
@@ -12,23 +16,23 @@ func (s *ApiServer) handleSignAnswers(
 	request *http.Request) error {
 
 	if request.Method != "POST" {
-		return fmt.Errorf("method not allowed %s", request.Method)
+		return utils.WriteJson(writer, http.StatusMethodNotAllowed, "Method not allowed")
 	}
 
-	Authorize(writer, request)
+	middleware.Authorize(writer, request)
 
-	var signAnswersRequest CreateSignatureRequest
+	var signAnswersRequest models.CreateSignatureRequest
 	json.NewDecoder(request.Body).Decode(&signAnswersRequest)
 
 	tokenString := request.Header.Get("Authorization")
-	userIdString, err := GetUserIdFromClaims(tokenString)
+	userIdString, err := utils.GetUserIdFromClaims(tokenString)
 	if err != nil {
-		return fmt.Errorf("error getting userId from claims")
+		return utils.WriteJson(writer, http.StatusInternalServerError, "internal server error")
 	}
 
 	userId, err := strconv.Atoi(userIdString)
 	if err != nil {
-		return fmt.Errorf("internal server error")
+		return utils.WriteJson(writer, http.StatusInternalServerError, "internal server error")
 	}
 
 	questionStrings := make([]string, len(signAnswersRequest.Answers))
@@ -43,19 +47,19 @@ func (s *ApiServer) handleSignAnswers(
 	questionsJson, err := json.Marshal(questionStrings)
 	answersJson, err := json.Marshal(answerStrings)
 
-	questionsHash := GenerateHash(string(questionsJson))
-	hash := GenerateHash(string(questionsJson) + string(answersJson) + userIdString)
+	questionsHash := utils.GenerateHash(string(questionsJson))
+	hash := utils.GenerateHash(string(questionsJson) + string(answersJson) + userIdString)
 
 	submissionExists, err := s.store.SignatureExists(questionsHash, userId)
 	if err != nil {
-		return fmt.Errorf("internal server error")
+		return utils.WriteJson(writer, http.StatusInternalServerError, "Internal server error")
 	}
 
 	if submissionExists {
-		return WriteJson(writer, http.StatusBadRequest, "Test submission already exists")
+		return utils.WriteJson(writer, http.StatusBadRequest, "Test submission already exists")
 	}
 
-	var signature Signature
+	var signature models.Signature
 
 	signature.Questions = questionStrings
 	signature.Answers = answerStrings
@@ -67,10 +71,10 @@ func (s *ApiServer) handleSignAnswers(
 	createErr := s.store.CreateSignature(&signature)
 
 	if createErr != nil {
-		return WriteJson(writer, http.StatusInternalServerError, "internal server error")
+		return utils.WriteJson(writer, http.StatusInternalServerError, "internal server error")
 	}
 
-	return WriteJson(writer, http.StatusOK, signature.Signature)
+	return utils.WriteJson(writer, http.StatusOK, signature.Signature)
 }
 
 func (s *ApiServer) handleVerifySignature(
@@ -78,27 +82,26 @@ func (s *ApiServer) handleVerifySignature(
 	request *http.Request) error {
 
 	if request.Method != "POST" {
-		return fmt.Errorf("method not allowed %s", request.Method)
+		return utils.WriteJson(writer, http.StatusMethodNotAllowed, "Method not allowed")
 	}
-	Authorize(writer, request)
 
-	var verifySignatureRequest VerifySignatureRequest
+	var verifySignatureRequest models.VerifySignatureRequest
 	json.NewDecoder(request.Body).Decode(&verifySignatureRequest)
 
-	signature, err := s.store.GetSignature(verifySignatureRequest.Signature)
+	signature, err := s.store.GetSignature(verifySignatureRequest.Signature, verifySignatureRequest.UserId)
 	if err != nil {
 		fmt.Println(err)
-		return WriteJson(writer, http.StatusNotFound, "Invalid signature")
+		return utils.WriteJson(writer, http.StatusNotFound, "Invalid signature")
 	}
 
-	answers := make([]AnswersDto, len(signature.Questions))
+	answers := make([]models.AnswersDto, len(signature.Questions))
 	for i := 0; i < len(signature.Questions); i++ {
 		answers[i].Question = signature.Questions[i]
 		answers[i].Answer = signature.Answers[i]
 	}
 
-	var verifySignatureResponse VerifySignatureResponse
+	var verifySignatureResponse models.VerifySignatureResponse
 	verifySignatureResponse.Answers = answers
 	verifySignatureResponse.Timestamp = signature.FinishedAt
-	return WriteJson(writer, http.StatusOK, verifySignatureResponse)
+	return utils.WriteJson(writer, http.StatusOK, verifySignatureResponse)
 }

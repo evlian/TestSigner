@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"fmt"
 	"time"
+
+	"github.com/evlian/TestSigner/internal/app/models"
 	"github.com/lib/pq"
 	_ "github.com/lib/pq"
 )
@@ -13,11 +15,11 @@ type PostgresStore struct {
 }
 
 type Storage interface {
-	CreateSignature(Signature) error
-	GetSignature(targetSignature string) (*Signature, error)
-	CreateUser(*User) error
-	GetUser(email string) (*User, error)
-	GetUserByEmail(email string) (*User, error)
+	CreateSignature(*models.Signature) error
+	GetSignature(targetSignature string, userId int) (*models.Signature, error)
+	CreateUser(*models.User) error
+	GetUser(email string) (*models.User, error)
+	GetUserByEmail(email string) (*models.User, error)
 	SignatureExists(questions string, user_id int) (bool, error)
 }
 
@@ -76,7 +78,7 @@ func (store *PostgresStore) CreateSignatureTable() error {
 	return err
 }
 
-func (store *PostgresStore) CreateUser(user *User) error {
+func (store *PostgresStore) CreateUser(user *models.User) error {
 	query := `
         INSERT INTO users
 		(
@@ -107,7 +109,7 @@ func (store *PostgresStore) CreateUser(user *User) error {
 	return nil
 }
 
-func (store *PostgresStore) CreateSignature(signature *Signature) error {
+func (store *PostgresStore) CreateSignature(signature *models.Signature) error {
 	query := `
         INSERT INTO signatures
 		(
@@ -138,15 +140,15 @@ func (store *PostgresStore) CreateSignature(signature *Signature) error {
 	return nil
 }
 
-func (store *PostgresStore) GetSignature(targetSignature string) (*Signature, error) {
+func (store *PostgresStore) GetSignature(targetSignature string, userId int) (*models.Signature, error) {
 	query := `
         SELECT signature_id, user_id, questions_hash, questions, answers, signature, finished_at
         FROM signatures
-        WHERE signature = $1
+        WHERE signature = $1 AND user_id = $2
     `
 
-	var signature Signature
-	err := store.database.QueryRow(query, targetSignature).Scan(
+	var signature models.Signature
+	err := store.database.QueryRow(query, targetSignature, userId).Scan(
 		&signature.Id,
 		&signature.UserId,
 		&signature.QuestionsHash,
@@ -172,7 +174,7 @@ func (store *PostgresStore) SignatureExists(questionsHash string, userId int) (b
         WHERE user_id = $1 AND questions_hash = $2
     `
 
-	var signature Signature
+	var signature models.Signature
 	err := store.database.QueryRow(query, userId, questionsHash).Scan(&signature.Id)
 
 	if err != nil {
@@ -185,7 +187,7 @@ func (store *PostgresStore) SignatureExists(questionsHash string, userId int) (b
 	return true, nil
 }
 
-func (store *PostgresStore) GetUser(email string) (*User, error) {
+func (store *PostgresStore) GetUser(email string) (*models.User, error) {
 	query := `
         SELECT id, email, password, salt
         FROM users
@@ -193,7 +195,7 @@ func (store *PostgresStore) GetUser(email string) (*User, error) {
     `
 
 	// Execute the SQL statement and scan the result into the User struct
-	var user User
+	var user models.User
 	err := store.database.QueryRow(query, email).Scan(&user.Id, &user.Email, &user.Password, &user.Salt)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -206,14 +208,14 @@ func (store *PostgresStore) GetUser(email string) (*User, error) {
 	return &user, nil
 }
 
-func (store *PostgresStore) GetUserByEmail(email string) (*User, error) {
+func (store *PostgresStore) GetUserByEmail(email string) (*models.User, error) {
 	query := `
         SELECT email, password
         FROM users
         WHERE email = $1 AND password = $2
     `
 
-	var user User
+	var user models.User
 	err := store.database.QueryRow(query, email).Scan(&email)
 
 	if err != nil {

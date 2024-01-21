@@ -3,6 +3,8 @@ package middleware
 import (
 	"fmt"
 	"net/http"
+
+	"github.com/evlian/TestSigner/internal/app/utils"
 )
 
 func Authorize(w http.ResponseWriter, r *http.Request) {
@@ -15,7 +17,7 @@ func Authorize(w http.ResponseWriter, r *http.Request) {
 	}
 	tokenString = tokenString[len("Bearer "):]
 
-	err := VerifyToken(tokenString)
+	err := utils.VerifyToken(tokenString)
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		fmt.Fprint(w, "invalid token")
