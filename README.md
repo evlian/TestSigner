@@ -4,18 +4,6 @@ The Test Signer is a service written in Go that allows users to register, sign a
 
 ## Prerequisites
 Make sure you have the following installed:
-Expand
-README.txt
-3 KB
-﻿
-Donut🍩
-edonah_
-# Test Signer Service
-
-The Test Signer is a service written in Go that allows users to register, sign answers, and verify signatures. It uses PostgreSQL as the database for storing user information and signatures.
-
-## Prerequisites
-Make sure you have the following installed:
 
 - Go
 - PostgreSQL
