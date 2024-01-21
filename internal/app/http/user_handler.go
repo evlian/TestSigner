@@ -50,7 +50,7 @@ func (s *ApiServer) handleRegister(
 	request *http.Request) error {
 
 	if request.Method != "POST" {
-		return utils.WriteJson(writer, http.StatusMethodNotAllowed, "Method not allowed")
+		return utils.WriteJson(writer, http.StatusMethodNotAllowed, "method not allowed")
 	}
 
 	var user models.User
@@ -80,15 +80,19 @@ func (s *ApiServer) handleRegister(
 	user.Password = hashedPassword
 
 	s.store.CreateUser(&user)
+	createdUser, err := s.store.GetUser(user.Email)
+	if err != nil {
+		return utils.WriteJson(writer, http.StatusInternalServerError, "internal server error")
+	}
 
-	tokenString, err := utils.CreateToken(user.Email)
+	tokenString, err := utils.CreateToken(strconv.Itoa(createdUser.Id))
 	if err != nil {
 		return utils.WriteJson(writer, http.StatusUnauthorized, "Unauthorized")
 	}
 
 	var loggedInUser models.SuccessfulAuthResponse
-	loggedInUser.Id = user.Id
-	loggedInUser.Email = user.Email
+	loggedInUser.Id = createdUser.Id
+	loggedInUser.Email = createdUser.Email
 	loggedInUser.Token = tokenString
 
 	return utils.WriteJson(writer, http.StatusCreated, loggedInUser)

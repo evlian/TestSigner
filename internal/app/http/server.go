@@ -39,7 +39,7 @@ func NewApiServer(listenAddress string, store database.Storage) *ApiServer {
 func (s *ApiServer) Run() {
 	router := mux.NewRouter()
 
-	router.Use(middleware.CommonMiddleware())
+	router.Use(middleware.CommonMiddleware)
 	router.HandleFunc("/sign-answers", makeHttpHandleFunc(s.handleSignAnswers))
 	router.HandleFunc("/verify-signature", makeHttpHandleFunc(s.handleVerifySignature))
 
